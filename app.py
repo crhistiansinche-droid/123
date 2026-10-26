@@ -248,7 +248,7 @@ elif st.session_state.page == 'results':
             st.write(f"La tua risposta: **[{risposta_data.upper()}]**")
             st.write(f"Risposta corretta: **[{q['corretta'].upper()}]**")
             
-            if non esatta:
+            if not esatta:
                 st.warning("Hai commesso un errore o saltato il quesito in questa domanda.")
                 
             st.info(f"💡 **Svolgimento:** {q['spiegazione']}")
