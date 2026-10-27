@@ -1,260 +1,582 @@
 import streamlit as st
-import random
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import numpy as np
 import time
 
 # ==========================================
-# BANCA DATI QUESITI COMPLETA (57 Domande)
+# IMPOSTAZIONI PAGINA STREAMLIT
 # ==========================================
-QUESTION_BANK = {
-    "Modulo 1: Vettori e Geometria Vettoriale": [
-        {"id": "M1_2021_T1A_Q2", "testo": "La norma del vettore x = (-2, √3, -1, 1) è:", "opzioni": {"a": "3", "b": "9", "c": "√3", "d": "nessuna delle precedenti"}, "corretta": "a", "spiegazione": "||x|| = √((-2)² + (√3)² + (-1)² + 1²) = √(4 + 3 + 1 + 1) = √9 = 3.", "fonte": "Esame 2021 T1A (Quesito 2)"},
-        {"id": "M1_2021_T1A_Q3", "testo": "Il valore di t per cui i vettori x1 = (1, 1, -1) e x2 = (t, -2, 2) sono linearmente dipendenti è:", "opzioni": {"a": "0", "b": "-2", "c": "2", "d": "nessuna delle precedenti"}, "corretta": "b", "spiegazione": "I vettori sono proporzionali se x2 = -2 · x1 ⇒ t = -2.", "fonte": "Esame 2021 T1A (Quesito 3)"},
-        {"id": "M1_2021_T2A_Q2", "testo": "Siano x = (1, 4, 0) e y = (-2, 5, 6). La distanza d(x, y) è:", "opzioni": {"a": "3", "b": "√17", "c": "√4", "d": "nessuna delle precedenti"}, "corretta": "d", "spiegazione": "d(x,y) = √((1 - (-2))² + (4 - 5)² + (0 - 6)²) = √(9 + 1 + 36) = √46, che non corrisponde ad a, b o c.", "fonte": "Esame 2021 T2A (Quesito 2)"},
-        {"id": "M1_2021_T2A_Q4", "testo": "Quale tra le seguenti coppie costituisce una base di ℝ²?", "opzioni": {"a": "x1 = (2, 1) e x2 = (0, 2)", "b": "x1 = (1, 3) e x2 = (2, 6)", "c": "x1 = (0, 1) e x2 = (0, -1)", "d": "nessuna delle precedenti"}, "corretta": "a", "spiegazione": "I due vettori (2,1) e (0,2) hanno determinante det = 4 - 0 = 4 ≠ 0, quindi sono linearmente indipendenti e formano una base.", "fonte": "Esame 2021 T2A (Quesito 4)"},
-        {"id": "M1_2021_Sim_Q1", "testo": "Dati x = (2, 5, 1) e y = (a, 1, -3) in ℝ³, d(x,y) = 6 per:", "opzioni": {"a": "a = 0", "b": "a = -2", "c": "a = -1 oppure a = 0", "d": "nessuna delle precedenti"}, "corretta": "d", "spiegazione": "d(x,y)² = (a-2)² + 16 + 16 = 36 ⇒ (a-2)² = 4 ⇒ a = 0 oppure a = 4.", "fonte": "Simulazione 2021 (Quesito 1)"},
-        {"id": "M1_2021_Sim_Q7", "testo": "I coefficienti c1, c2 della combinazione lineare del vettore x = (1, 2, 3) rispetto a y = (1, -1, 0) e z = (2, -1, 1) sono:", "opzioni": {"a": "c1 = 3 e c2 = -5", "b": "c1 = -5 e c2 = 3", "c": "c1 = -4 e c2 = 3", "d": "nessuna delle precedenti"}, "corretta": "b", "spiegazione": "c1(1,-1,0) + c2(2,-1,1) = (1,2,3) ⇒ c2 = 3 e c1 + 2(3) = 1 ⇒ c1 = -5.", "fonte": "Simulazione 2021 (Quesito 7)"},
-        {"id": "M1_2022_T1A_Q1", "testo": "La norma del vettore x = (-1, -2, 1, 2) è:", "opzioni": {"a": "10", "b": "0", "c": "3", "d": "nessuna delle precedenti"}, "corretta": "d", "spiegazione": "||x|| = √(1 + 4 + 1 + 4) = √10 ≈ 3.162 (la risposta a è 10, non √10).", "fonte": "Esame 2022 T1A (Quesito 1)"},
-        {"id": "M1_2022_T1A_Q2", "testo": "I coefficienti c1, c2 della combinazione x = (2, 4, -3) rispetto a x1 = (0, 2, 1) e x2 = (1, 3, -1) sono:", "opzioni": {"a": "c1 = 1, c2 = 2", "b": "c1 = -1, c2 = 2", "c": "c1 = 2, c2 = -1", "d": "nessuna delle precedenti"}, "corretta": "b", "spiegazione": "2 = c2 ⇒ c2 = 2; 4 = 2c1 + 3(2) ⇒ 2c1 = -2 ⇒ c1 = -1. Verifica terza componente: -1(1) + 2(-1) = -3.", "fonte": "Esame 2022 T1A (Quesito 2)"},
-        {"id": "M1_2022_T2A_Q3", "testo": "Siano x = (3, 2, 0) e y = (1, -4, a). La distanza d(x, y) è pari a 7 per:", "opzioni": {"a": "a = 1", "b": "a = 3 oppure a = -3", "c": "a = 0", "d": "nessuna delle precedenti"}, "corretta": "b", "spiegazione": "d(x,y)² = 4 + 36 + a² = 40 + a² = 49 ⇒ a² = 9 ⇒ a = ±3.", "fonte": "Esame 2022 T2A (Quesito 3)"},
-        {"id": "M1_2022_T3A_Q1", "testo": "L'uguaglianza <(k, 2, 1) + (k, -1, 1), (k, 2, -2)> = 0 è vera per:", "opzioni": {"a": "k = 0", "b": "k = +2 e k = -2", "c": "k = +1 e k = -1", "d": "nessuna delle precedenti"}, "corretta": "c", "spiegazione": "Vettore somma: (2k, 1, 2). Prodotto scalare: 2k² + 2 - 4 = 2k² - 2 = 0 ⇒ k² = 1 ⇒ k = ±1.", "fonte": "Esame 2022 T3A (Quesito 1)"},
-        {"id": "M1_2023_T1A_Q1", "testo": "La norma del vettore x = (-2, k, -1, 2k) è pari a 5 per:", "opzioni": {"a": "solo per k = 0", "b": "solo per k = 2", "c": "solo per k = 2 e k = -2", "d": "nessuna delle precedenti"}, "corretta": "c", "spiegazione": "||x||² = 4 + k² + 1 + 4k² = 5k² + 5 = 25 ⇒ 5k² = 20 ⇒ k = ±2.", "fonte": "Esame 2023 T1A (Quesito 1)"},
-        {"id": "M1_2023_T2A_Q2", "testo": "La combinazione lineare dei vettori x1 = (1, -2, 3) e x2 = (0, -1, -2) con coefficienti c1 = 4 e c2 = 2 è il vettore z =", "opzioni": {"a": "(4, -10, 8)", "b": "(2, -10, 8)", "c": "(4, -10, 6)", "d": "nessuna delle precedenti"}, "corretta": "a", "spiegazione": "4(1,-2,3) + 2(0,-1,-2) = (4, -8, 12) + (0, -2, -4) = (4, -10, 8).", "fonte": "Esame 2023 T2A (Quesito 2)"},
-        {"id": "M1_2023_Sim_Q2", "testo": "Siano x = (0, 1, 1) e y = (k, k, 2). La distanza d(x, y) = 1 se e solo se:", "opzioni": {"a": "k = 0", "b": "k = 1", "c": "k = 2", "d": "nessuna delle precedenti"}, "corretta": "a", "spiegazione": "d(x,y)² = 1 ⇒ 2k² - 2k + 1 = 0. Nessuna soluzione reale eccetto k=0. Quindi d) nessuna delle precedenti o k=0.", "fonte": "Simulazione 2023 (Quesito 2)"}
-    ],
-    "Modulo 2: Algebra Matriciale e Sistemi Lineari": [
-        {"id": "M2_2021_T1A_Q1", "testo": "Siano A = [[0, 2], [1, 4]] e B = [[3, 1], [0, -1]]. Allora A + B =", "opzioni": {"a": "[[3, 2], [1, 3]]", "b": "[[3, 3], [0, 3]]", "c": "[[3, 3], [1, -4]]", "d": "[[3, 3], [1, 3]]"}, "corretta": "d", "spiegazione": "Somma componente per componente: [[0+3, 2+1], [1+0, 4+(-1)]] = [[3, 3], [1, 3]].", "fonte": "Esame 2021 T1A (Quesito 1)"},
-        {"id": "M2_2021_T1A_Q4", "testo": "La matrice C = [[1, -1, k], [-1, 1, -1], [0, -1, 2]] è singolare:", "opzioni": {"a": "solo per k = 1", "b": "solo per k = 0", "c": "per ogni k ∈ ℝ", "d": "nessuna delle precedenti"}, "corretta": "a", "spiegazione": "det(C) = 1 - 2 + k = k - 1. det(C) = 0 ⇔ k = 1.", "fonte": "Esame 2021 T1A (Quesito 4)"},
-        {"id": "M2_2021_T1A_Q5", "testo": "Sia x ∈ ℝ⁴. Il sistema lineare [[1, -2, -2, 3], [1, -1, 2, 2]] x = [[4], [-1]] ammette:", "opzioni": {"a": "∞² soluzioni", "b": "un'unica soluzione", "c": "∞¹ soluzioni", "d": "nessuna delle precedenti"}, "corretta": "a", "spiegazione": "Il sistema ha 2 equazioni e 4 incognite. Il rango è 2, per Rouché-Capelli vi sono ∞⁴⁻² = ∞² soluzioni.", "fonte": "Esame 2021 T1A (Quesito 5)"},
-        {"id": "M2_2021_T2A_Q1", "testo": "Siano A = [[1, 4, 3], [2, 3, 1]] e B = [[3, 1], [-1, 2], [0, 1]]. Sia C = A · B. L'elemento c21 di C vale:", "opzioni": {"a": "non si può calcolare", "b": "vale 3", "c": "vale -1", "d": "nessuna delle precedenti"}, "corretta": "b", "spiegazione": "c21 è il prodotto scalare tra la riga 2 di A e la colonna 1 di B: 6 - 3 + 0 = 3.", "fonte": "Esame 2021 T2A (Quesito 1)"},
-        {"id": "M2_2021_T2A_Q3", "testo": "Per quali valori del parametro k ∈ ℝ il rango della matrice A = [[1, 4, k], [0, 3, 1], [0, 0, k]] è pari a 3?", "opzioni": {"a": "solo per k = 0", "b": "per ogni k ≠ 0", "c": "per ogni k ∈ ℝ", "d": "per ogni k ≥ 0"}, "corretta": "b", "spiegazione": "A è triangolare, det(A) = 3k. det(A) ≠ 0 ⇔ k ≠ 0. Quindi rg(A) = 3 per ogni k ≠ 0.", "fonte": "Esame 2021 T2A (Quesito 3)"},
-        {"id": "M2_2022_T1A_Q4", "testo": "Il rango della matrice A = [[3, -3, -6], [-2, 2, 4]] è:", "opzioni": {"a": "rg(A) = 1", "b": "rg(A) = 2", "c": "rg(A) = 3", "d": "rg(A) = 0"}, "corretta": "a", "spiegazione": "La seconda riga è proporzionale alla prima: R2 = (-2/3)·R1. Tutte le sottomatrici 2x2 hanno det = 0. Il rango è 1.", "fonte": "Esame 2022 T1A (Quesito 4)"},
-        {"id": "M2_2022_T2A_Q5", "testo": "Il rango della matrice B = [[1, 2, 2], [2, 4, 1], [-1, -2, 0]] è:", "opzioni": {"a": "Rg(B) = 1", "b": "Rg(B) = 2", "c": "Rg(B) = 3", "d": "Rg(B) = 0"}, "corretta": "b", "spiegazione": "La colonna 2 è il doppio della colonna 1, det(B) = 0. Trovando una sottomatrice 2x2 non singolare, il rango è 2.", "fonte": "Esame 2022 T2A (Quesito 5)"},
-        {"id": "M2_2022_T2A_Q6", "testo": "Sia A = [[3, 1], [-2, 2]]. Allora det(A⁻¹) =", "opzioni": {"a": "4", "b": "1/4", "c": "1/8", "d": "nessuna delle precedenti"}, "corretta": "c", "spiegazione": "det(A) = (3)(2) - (1)(-2) = 8. Poiché det(A⁻¹) = 1 / det(A), si ottiene 1/8.", "fonte": "Esame 2022 T2A (Quesito 6)"},
-        {"id": "M2_2022_T3A_Q2", "testo": "Siano A = [[-3, 1], [2, -2]] e B = [[2, -1], [-1, 0]]. Allora A - 3B =", "opzioni": {"a": "[[-6, -1], [3, -4]]", "b": "[[-9, 4], [5, -2]]", "c": "[[3, -2], [-1, -2]]", "d": "nessuna delle precedenti"}, "corretta": "b", "spiegazione": "A - 3B = [[-3 - 6, 1 - (-3)], [2 - (-3), -2 - 0]] = [[-9, 4], [5, -2]].", "fonte": "Esame 2022 T3A (Quesito 2)"},
-        {"id": "M2_2023_T1A_Q2", "testo": "Siano A = [[-1, 0, 0], [2, -3, 0]] e B = [[2, 3, 0], [1, 1, 0]]. Allora B - 2A =", "opzioni": {"a": "[[4, 3, 0], [-3, 7, 0]]", "b": "[[4, 3], [-3, 7]]", "c": "non esiste", "d": "nessuna delle precedenti"}, "corretta": "a", "spiegazione": "B - 2A = [[2 - (-2), 3 - 0, 0 - 0], [1 - 4, 1 - (-6), 0 - 0]] = [[4, 3, 0], [-3, 7, 0]].", "fonte": "Esame 2023 T1A (Quesito 2)"},
-        {"id": "M2_2023_T1A_Q3", "testo": "Sia A = [[0, -1, k], [0, k, 2], [1, 1-k, 2]] con k ∈ ℝ. Quale affermazione è vera?", "opzioni": {"a": "Se k = 1 allora det(A⁻¹) = 1/3", "b": "La matrice A è invertibile per ogni k ∈ ℝ", "c": "A⁻¹ esiste se e solo se k ≠ -2, 2", "d": "nessuna delle precedenti"}, "corretta": "b", "spiegazione": "det(A) = -(k² + 2). Poiché k² + 2 > 0 per ogni k ∈ ℝ, det(A) ≠ 0 per ogni k. Quindi A è sempre invertibile.", "fonte": "Esame 2023 T1A (Quesito 3)"},
-        {"id": "M2_2023_T2A_Q3", "testo": "Date A = [[1, 0, -1], [3, 1, 0], [0, 1, 0]] e B = [[2, -1, 4], [1, 0, -1]], quale delle seguenti è vera?", "opzioni": {"a": "A · B = B · A", "b": "le colonne di A sono linearmente dipendenti", "c": "Rango(B) = 2", "d": "nessuna delle precedenti"}, "corretta": "c", "spiegazione": "B ha 2 righe e 3 colonne con righe indipendenti, quindi Rango(B) = 2.", "fonte": "Esame 2023 T2A (Quesito 3)"}
-    ],
-    "Modulo 3: Proprietà Analitiche e Studio di Funzioni": [
-        {"id": "M3_2021_T1A_Q6", "testo": "Date le funzioni f(x) = ln(x²) e g(x) = e^|x|, definite sui rispettivi domini:", "opzioni": {"a": "f è dispari e g è pari", "b": "f e g sono entrambe funzioni pari", "c": "f è pari e g è dispari", "d": "nessuna delle risposte precedenti"}, "corretta": "b", "spiegazione": "f(-x) = ln((-x)²) = ln(x²) = f(x) (pari); g(-x) = e^|-x| = e^|x| = g(x) (pari).", "fonte": "Esame 2021 T1A (Quesito 6)"},
-        {"id": "M3_2021_T1A_Q8", "testo": "Il dominio della funzione f(x) = 1 / √(x² - 4x + 3) è:", "opzioni": {"a": "[1, 3]", "b": "(-∞, 1) ∪ (3, +∞)", "c": "(-∞, 1] ∪ [3, +∞)", "d": "(1, 3)"}, "corretta": "b", "spiegazione": "x² - 4x + 3 > 0 ⇒ x < 1 oppure x > 3.", "fonte": "Esame 2021 T1A (Quesito 8)"},
-        {"id": "M3_2021_T1A_Q9", "testo": "Siano f(x) = 1 / x² e g(x) = ln(√x). Allora Dom(g ◦ f) =", "opzioni": {"a": "(0, +∞)", "b": "ℝ \\ {0}", "c": "(-∞, 0)", "d": "nessuna delle risposte precedenti"}, "corretta": "b", "spiegazione": "(g ◦ f)(x) = ln(√(1/x²)) = ln(1/|x|). L'argomento 1/|x| è definito e positivo per ogni x ≠ 0.", "fonte": "Esame 2021 T1A (Quesito 9)"},
-        {"id": "M3_2021_T2A_Q6", "testo": "La funzione f(x) = 2x² + 2x è:", "opzioni": {"a": "superiormente limitata e max(f) = 1/2", "b": "inferiormente limitata e inf(f) = -1/2", "c": "illimitata sia inferiormente che superiormente", "d": "nessuna delle risposte precedenti"}, "corretta": "b", "spiegazione": "Trattasi di una parabola rivolta verso l'alto. Il vertice è in x_v = -1/2. Il minimo assoluto è f(-1/2) = -1/2.", "fonte": "Esame 2021 T2A (Quesito 6)"},
-        {"id": "M3_2021_T2A_Q7", "testo": "Sia f: ℝ → ℝ definita da f(x) = ln(x+1) per x ≥ 0 e f(x) = -x² per x < 0. Allora f è:", "opzioni": {"a": "iniettiva e suriettiva", "b": "non iniettiva e Im(f) = [0, +∞)", "c": "iniettiva ma non suriettiva", "d": "nessuna delle precedenti"}, "corretta": "a", "spiegazione": "Cresce da -∞ a 0 (escluso) e poi da 0 a +∞ in modo strettamente crescente. f è biettiva.", "fonte": "Esame 2021 T2A (Quesito 7)"},
-        {"id": "M3_2022_T1A_Q9", "testo": "Siano f(x) = ln(x² - 2) e g(x) = e^x + 2. Allora g(f(x)) =", "opzioni": {"a": "x²", "b": "x² - 2", "c": "e^(ln(x²-2))", "d": "nessuna delle precedenti"}, "corretta": "a", "spiegazione": "g(f(x)) = e^(ln(x²-2)) + 2 = (x² - 2) + 2 = x².", "fonte": "Esame 2022 T1A (Quesito 9)"},
-        {"id": "M3_2022_T3A_Q5", "testo": "Date f(x) = x⁵ - 2x³ + 1, g(x) = x² e^|x|, h(x) = (x⁴ - x²) / (|x| + 1):", "opzioni": {"a": "f è dispari e g è pari", "b": "g e h sono funzioni pari", "c": "g è pari e h è dispari", "d": "nessuno dei precedenti"}, "corretta": "b", "spiegazione": "g(-x) = x² e^|x| = g(x) (pari); h(-x) = (x⁴ - x²) / (|x| + 1) = h(x) (pari).", "fonte": "Esame 2022 T3A (Quesito 5)"},
-        {"id": "M3_2022_T3A_Q7", "testo": "Sia f(x) = e^(x³ + 1) - 2. L'espressione di f⁻¹ è:", "opzioni": {"a": "∛(ln(x+2) - 1)", "b": "∛(ln(x+2)) - 1", "c": "∛(ln(x+1) - 2)", "d": "f non è invertibile"}, "corretta": "b", "spiegazione": "y = e^(x³ + 1) - 2 ⇒ ln(y+2) = x³ + 1 ⇒ x = ∛(ln(y+2) - 1).", "fonte": "Esame 2022 T3A (Quesito 7)"},
-        {"id": "M3_2023_T1A_Q8", "testo": "Il dominio della funzione f(x) = ln((x² - 2x) / (4 - x)) è:", "opzioni": {"a": "(-∞, 0)", "b": "(-∞, 0) ∪ (2, 4)", "c": "(-∞, 0] ∪ [2, 4)", "d": "nessuna delle precedenti"}, "corretta": "b", "spiegazione": "La frazione è positiva per x < 0 oppure 2 < x < 4.", "fonte": "Esame 2023 T1A (Quesito 8)"},
-        {"id": "M3_2023_T2A_Q5", "testo": "Date f(x) = e^(1-x²), g(x) = sin(x)/x, h(x) = x³ + x:", "opzioni": {"a": "f è dispari e g è pari", "b": "g e h sono funzioni dispari", "c": "g è pari e h è dispari", "d": "nessuna delle precedenti"}, "corretta": "c", "spiegazione": "g(-x) = sin(-x)/(-x) = sin(x)/x (pari); h(-x) = -(x³+x) (dispari).", "fonte": "Esame 2023 T2A (Quesito 5)"},
-        {"id": "M3_2023_T2A_Q10", "testo": "Sia f(x) = 2 + ln(x - 1). L'espressione della funzione inversa f⁻¹ è:", "opzioni": {"a": "1 / (2 + ln(x-1))", "b": "e^(x-1) + 1", "c": "e^(x-2) + 1", "d": "e^(x-1) + 2"}, "corretta": "c", "spiegazione": "y - 2 = ln(x-1) ⇒ e^(y-2) = x - 1 ⇒ x = e^(y-2) + 1.", "fonte": "Esame 2023 T2A (Quesito 10)"}
-    ],
-    "Modulo 4: Topologia, Successioni e Teoria": [
-        {"id": "M4_2021_T1A_Q11", "testo": "L'insieme dei punti di accumulazione di A = {3 - 1/n : n ∈ ℕ, n ≥ 1} è:", "opzioni": {"a": "[2, 3]", "b": "{3}", "c": "(2, 3)", "d": "nessuna delle risposte precedenti"}, "corretta": "b", "spiegazione": "Gli elementi tendono a 3 per n → +∞. L'unico punto di accumulazione è il valore limite 3.", "fonte": "Esame 2021 T1A (Quesito 11)"},
-        {"id": "M4_2021_T2A_Q10", "testo": "La successione a_n = 1 se n è pari, a_n = n² se n è dispari:", "opzioni": {"a": "è divergente a +∞", "b": "è divergente a -∞", "c": "è irregolare", "d": "è convergente a 1"}, "corretta": "c", "spiegazione": "La sottosuccessione dei pari tende a 1, dei dispari a +∞. È irregolare.", "fonte": "Esame 2021 T2A (Quesito 10)"},
-        {"id": "M4_2021_T2A_Q12", "testo": "Sia A = {x ∈ ℝ : 0 ≤ ln(x) ≤ 1} ∪ {5}. Allora:", "opzioni": {"a": "A è un insieme aperto", "b": "A è un insieme chiuso", "c": "A non è né aperto né chiuso", "d": "int(A) = ∅"}, "corretta": "b", "spiegazione": "0 ≤ ln(x) ≤ 1 ⇔ 1 ≤ x ≤ e. A = [1, e] ∪ {5}, chiuso.", "fonte": "Esame 2021 T2A (Quesito 12)"},
-        {"id": "M4_2021_Sim_Q11", "testo": "L'insieme dei punti di frontiera dell'insieme A := {3, 5} ∪ [6, 10) è:", "opzioni": {"a": "{3, 4, 5}", "b": "{3, 5, 6, 10}", "c": "(6, 10)", "d": "{3, 4, 5, 6, 10}"}, "corretta": "b", "spiegazione": "Punti isolati 3,5. Estremi dell'intervallo 6,10. Frontiera = {3, 5, 6, 10}.", "fonte": "Simulazione 2021 (Quesito 11)"},
-        {"id": "M4_2022_T1A_Q5", "testo": "Dato l'insieme A = {3 - 1/n² : n ∈ ℕ, n ≥ 1}:", "opzioni": {"a": "3 e 2 sono punti di accumulazione", "b": "tutti i punti di A sono isolati", "c": "0 è punto di frontiera", "d": "nessuna"}, "corretta": "b", "spiegazione": "Ciascun punto è distante dai suoi vicini, perciò è isolato (3 è di accumulazione ma non appartiene).", "fonte": "Esame 2022 T1A (Quesito 5)"},
-        {"id": "M4_2023_T2A_Q7", "testo": "Sia (a_n)_{n≥0} una successione. Essa si dice STRETTAMENTE CRESCENTE se:", "opzioni": {"a": "a_n < a_{n+1} per ogni n ≥ 0", "b": "a_n ≤ a_{n+1} per ogni n ≥ 0", "c": "a_n > a_{n+1} per ogni n ≥ 0", "d": "nessuna delle precedenti"}, "corretta": "a", "spiegazione": "Per definizione rigorosa: a_n < a_{n+1} per ogni n ≥ 0.", "fonte": "Esame 2023 T2A (Quesito 7)"},
-        {"id": "M4_2023_T2A_Q11", "testo": "La successione a_n := (1 + log(n)) / (n³ + √n):", "opzioni": {"a": "è superiormente illimitata", "b": "converge a 0", "c": "è irregolare", "d": "nessuna delle precedenti"}, "corretta": "b", "spiegazione": "Il polinomio n³ domina la crescita logaritmica del numeratore. Il limite è 0.", "fonte": "Esame 2023 T2A (Quesito 11)"},
-        {"id": "M4_2023_Sim_Q7", "testo": "Un elemento M ∈ ℝ è un MAGGIORANTE per un insieme non vuoto A ⊆ ℝ se:", "opzioni": {"a": "x ≤ M per ogni x ∈ A", "b": "x ≥ M per ogni x ∈ A", "c": "x < M per ogni x ∈ A", "d": "nessuna delle precedenti"}, "corretta": "a", "spiegazione": "Per definizione: x ≤ M per ogni x ∈ A.", "fonte": "Simulazione 2023 (Quesito 7)"}
-    ],
-    "Modulo 5: Limiti e Lettura Grafica": [
-        {"id": "M5_2021_T1A_Q10", "testo": "Sia f(x) = 1/(x²-1) per x > -1 e f(x) = ∛(x-1) per x ≤ -1. Allora lim_{x → -1} f(x):", "opzioni": {"a": "0", "b": "non esiste", "c": "1", "d": "-∞"}, "corretta": "b", "spiegazione": "Da sx lim è ∛(-2). Da dx è -∞. I limiti differiscono, quindi non esiste.", "fonte": "Esame 2021 T1A (Quesito 10)"},
-        {"id": "M5_2022_T1A_Q11", "testo": "Il valore del limite lim_{n → +∞} (√(9n² + 4) - 3n) è:", "opzioni": {"a": "+∞", "b": "0", "c": "1/2", "d": "nessuna delle precedenti"}, "corretta": "b", "spiegazione": "Moltiplicando e dividendo per il coniugato: 4 / (√(9n²+4) + 3n) = 0.", "fonte": "Esame 2022 T1A (Quesito 11)"},
-        {"id": "M5_2022_T1A_Q12", "testo": "Il limite lim_{x → +∞} (cos x - 4x²) / x è:", "opzioni": {"a": "-∞", "b": "0", "c": "+∞", "d": "-4"}, "corretta": "a", "spiegazione": "(cos x)/x - 4x = 0 - ∞ = -∞.", "fonte": "Esame 2022 T1A (Quesito 12)"},
-        {"id": "M5_2022_T2A_Q1", "testo": "Il valore del limite lim_{x → 1} (x² - 3x + 2) / (x - 1) è:", "opzioni": {"a": "1", "b": "-1", "c": "0", "d": "nessuna delle precedenti"}, "corretta": "b", "spiegazione": "(x - 1)(x - 2) / (x - 1) = x - 2. In x=1 fa -1.", "fonte": "Esame 2022 T2A (Quesito 1)"},
-        {"id": "M5_2022_T2A_Q2", "testo": "Il valore del limite lim_{n → +∞} (√(n² - 2) - √(n² - 4)) è:", "opzioni": {"a": "0", "b": "+∞", "c": "2", "d": "nessuna delle precedenti"}, "corretta": "a", "spiegazione": "Per coniugazione: 2 / (√(n²-2) + √(n²-4)) = 0.", "fonte": "Esame 2022 T2A (Quesito 2)"},
-        {"id": "M5_2023_T1A_Q12", "testo": "Il limite lim_{x → -∞} (x³ + 1) / (x + e^x) è:", "opzioni": {"a": "-∞", "b": "0", "c": "+∞", "d": "1"}, "corretta": "c", "spiegazione": "Per x → -∞, e^x → 0. Rimane lim_{x → -∞} x³/x = +∞.", "fonte": "Esame 2023 T1A (Quesito 12)"},
-        {"id": "M5_2023_Sim_Q9", "testo": "Il limite lim_{x → +∞} tan(1/x) · √(x² + x + e⁻ˣ) è:", "opzioni": {"a": "-∞", "b": "0", "c": "+∞", "d": "1"}, "corretta": "d", "spiegazione": "Per x → +∞, tan(1/x) ∼ 1/x e √(x² + x) ∼ x. (1/x)*x = 1.", "fonte": "Simulazione 2023 (Quesito 9)"}
-    ],
-    "Modulo 6: Grafici e Trasformazioni Geometriche": [
-        {"id": "M6_2021_T2A_Q11", "testo": "Il grafico della funzione f(x) = |2^x - 4| si ottiene da 2^x traslando in basso di 4 e poi:", "opzioni": {"a": "ribaltando verso l'alto la porzione con y < 0 per l'effetto del valore assoluto", "b": "riflettendo specularmente la parte x ≥ 0", "c": "ruotando il grafico", "d": "nessuna"}, "corretta": "a", "spiegazione": "Il valore assoluto esterno ribalta la parte negativa creando un punto angoloso in (2, 0).", "fonte": "Esame 2021 T2A (Quesito 11)"},
-        {"id": "M6_2022_T1A_Q10", "testo": "Per tracciare il grafico qualitativo di f(x) = ln|x - 2|, si applicano nell'ordine:", "opzioni": {"a": "traslazione a dx di 2 di ln(x) e simmetria speculare rispetto alla retta x = 2", "b": "valore assoluto su ln(x) e poi traslazione", "c": "ribaltamento verso l'alto per y < 0", "d": "nessuna"}, "corretta": "a", "spiegazione": "Il modulo dell'argomento riflette specularmente rispetto all'asintoto x = 2.", "fonte": "Esame 2022 T1A (Quesito 10)"},
-        {"id": "M6_2022_T2A_Q12", "testo": "Il grafico qualitativo di f(x) = √|x + 1| presenta:", "opzioni": {"a": "un punto angoloso in (-1, 0) ed è simmetrico rispetto alla retta x = -1", "b": "un asintoto verticale in x = -1", "c": "un punto di massimo", "d": "nessuna"}, "corretta": "a", "spiegazione": "La traslazione a sx seguita dal modulo dell'argomento crea un punto angoloso simmetrico in x = -1.", "fonte": "Esame 2022 T2A (Quesito 12)"},
-        {"id": "M6_2022_T3A_Q12", "testo": "Il grafico qualitativo di f(x) = e^|x| - 2 presenta un punto angoloso in:", "opzioni": {"a": "(0, -1)", "b": "(0, 1)", "c": "(2, 0)", "d": "nessuna"}, "corretta": "a", "spiegazione": "e^|x| ha punto angoloso in (0,1). Abbassato di 2 scende a (0, -1).", "fonte": "Esame 2022 T3A (Quesito 12)"},
-        {"id": "M6_2023_T1A_Q10", "testo": "Il grafico della funzione f(x) = |ln(x - 1)| presenta:", "opzioni": {"a": "un punto angoloso sull'asse x nel punto (2, 0) con asintoto verticale in x = 1", "b": "asintoto orizzontale", "c": "massimo in x=2", "d": "nessuna"}, "corretta": "a", "spiegazione": "Il log si annulla in 2. Il modulo ribalta la parte sotto l'asse X creando il punto angoloso in (2,0).", "fonte": "Esame 2023 T1A (Quesito 10)"},
-        {"id": "M6_2023_T2A_Q12", "testo": "Il grafico di f(x) = e^|x - 1| si ottiene da e^|x|:", "opzioni": {"a": "traslando il grafico a dx di 1 unità, ponendo il punto angoloso in (1, 1)", "b": "traslando in alto di 1 unità", "c": "ribaltando rispetto all'asse x", "d": "nessuna"}, "corretta": "a", "spiegazione": "x-1 genera traslazione verso destra di 1 unità.", "fonte": "Esame 2023 T2A (Quesito 12)"}
-    ]
-}
+st.set_page_config(
+    page_title="Simulatore Esame - Storia Economica",
+    page_icon="📜",
+    layout="centered"
+)
 
 # ==========================================
-# FUNZIONI LOGICHE DEL QUIZ
+# BANCA DATI QUESITI
 # ==========================================
-def genera_quiz_bilanciato():
-    quiz = []
-    struttura_moduli = [
-        ("Modulo 1: Vettori e Geometria Vettoriale", 2),
-        ("Modulo 2: Algebra Matriciale e Sistemi Lineari", 2),
-        ("Modulo 3: Proprietà Analitiche e Studio di Funzioni", 3),
-        ("Modulo 4: Topologia, Successioni e Teoria", 2),
-        ("Modulo 5: Limiti e Lettura Grafica", 2),
-        ("Modulo 6: Grafici e Trasformazioni Geometriche", 1),
-    ]
+VF_QUESTIONS = [
+    {
+        "id": 1,
+        "text": "1. La Produttività Totale dei Fattori (TFP) è la differenza tra incremento del reddito e incremento ponderato dei fattori produttivi.",
+        "correct": "VERO",
+        "explanation": "Corretto [Ref: Domanda 1 banco domande / Appunti Cap 4]. La TFP misura l'aumento dell'efficienza produttiva non spiegato dal semplice aumento quantitativo degli input."
+    },
+    {
+        "id": 2,
+        "text": "2. La conoscenza tecnologica è un bene rivale.",
+        "correct": "FALSO",
+        "explanation": "Falso [Ref: Domanda 23 banco domande / Appunti Cap 1]. La conoscenza è un bene non rivale in quanto l'uso da parte di un individuo non ne riduce la disponibilità per altri."
+    },
+    {
+        "id": 3,
+        "text": "3. Ester Boserup ha sostenuto che il vincolo della scarsità di terra sia stato uno stimolo fondamentale alle innovazioni tecnologiche agricole.",
+        "correct": "VERO",
+        "explanation": "Corretto [Ref: Domanda 12 banco domande / Appunti Cap 4]. La pressione demografica e la scarsità inducono l'adozione di tecniche più intensive."
+    },
+    {
+        "id": 4,
+        "text": "4. La servitù della gleba è un esempio di istituzione efficiente e duratura.",
+        "correct": "FALSO",
+        "explanation": "Falso [Ref: Domanda 15 banco domande / Appunti Cap 5]. È un'istituzione inefficiente che è persistita principalmente per tutelare gli interessi dei proprietari terrieri."
+    },
+    {
+        "id": 5,
+        "text": "5. La moneta segno (fiduciaria) è una moneta priva di valore intrinseco.",
+        "correct": "VERO",
+        "explanation": "Corretto [Ref: Domanda 32 banco domande / Appunti Cap 7]. Il suo valore si basa sulla fiducia e sulle disposizioni dell'autorità emittente."
+    },
+    {
+        "id": 6,
+        "text": "6. L'Inghilterra è storicamente caratterizzata da un sistema finanziario del tipo 'transaction banking' (market-oriented).",
+        "correct": "VERO",
+        "explanation": "Corretto [Ref: Domanda 34 banco domande / Appunti Cap 7]. Il modello inglese si è sviluppato attorno ai mercati dei capitali e all'autofinanziamento."
+    },
+    {
+        "id": 7,
+        "text": "7. Il livello di istruzione delle donne è un valido previsore della riduzione dei tassi di fertilità.",
+        "correct": "VERO",
+        "explanation": "Corretto [Ref: Domanda 11 banco domande / Appunti Cap 4]. L'aumento dell'istruzione femminile incrementa il costo opportunità del tempo e sposta l'investimento sulla qualità dei figli."
+    },
+    {
+        "id": 8,
+        "text": "8. La spinning jenny e il telaio meccanico sono classici esempi di 'General Purpose Technology'.",
+        "correct": "FALSO",
+        "explanation": "Falso [Ref: Domande 27-28 banco domande]. L'energia elettrica e la macchina a vapore sono GPT, mentre la spinning jenny è una tecnologia settoriale."
+    },
+    {
+        "id": 9,
+        "text": "9. In età preindustriale le crisi di mortalità (peste, carestie) avevano effetti demografici ed economici permanenti e irreversibili.",
+        "correct": "FALSO",
+        "explanation": "Falso [Ref: Domanda 45 banco domande / Appunti Cap 3-4]. I dati mostrano che le crisi di mortalità avevano effetti solo transitori, seguiti da una rapida ripresa demografica."
+    },
+    {
+        "id": 10,
+        "text": "10. La Banca d'Inghilterra venne fondata sul finire del XVII secolo (1694).",
+        "correct": "VERO",
+        "explanation": "Corretto [Ref: Domanda 42 banco domande / Appunti Cap 7]. Rappresentò un pilastro decisivo per la stabilizzazione del debito e dello sviluppo finanziario britannico."
+    }
+]
 
-    domanda_num = 1
-    for modulo_nome, quantita in struttura_moduli:
-        quesiti_disponibili = QUESTION_BANK.get(modulo_nome, [])
-        if quesiti_disponibili:
-            estratti = random.sample(quesiti_disponibili, min(quantita, len(quesiti_disponibili)))
-            for q in estratti:
-                q_copy = dict(q)
-                q_copy["numero_esame"] = domanda_num
-                q_copy["modulo"] = modulo_nome
-                quiz.append(q_copy)
-                domanda_num += 1
-    return quiz
+MC_QUESTIONS = [
+    {
+        "id": 1,
+        "question": "1. In presenza di bassa domanda aggregata e bassa densità di popolazione, quali tecnologie tendono a prevalere?",
+        "options": [
+            "A) Tecnologie con alti costi fissi e bassi costi variabili",
+            "B) Tecnologie con bassi costi fissi e alti costi variabili (es. lavoro umano)",
+            "C) Tecnologie con alti costi fissi e alti costi variabili",
+            "D) Esclusivamente tecnologie General Purpose"
+        ],
+        "correct": 1,  # Indice opzione B
+        "explanation": "Corretto B [Ref: Domanda 3 banco domande / Appunti Cap 3]. Sotto una certa soglia di domanda dominano tecniche a basso costo fisso."
+    },
+    {
+        "id": 2,
+        "question": "2. L'effetto frontiera ('border effect') nel commercio internazionale è associato a:",
+        "options": [
+            "A) Un abbattimento generale dei dazi doganali",
+            "B) Un aumento significativo dei costi di transazione al variare dei confini",
+            "C) La scomparsa della legge del prezzo unico",
+            "D) La riduzione dell'elasticità della domanda"
+        ],
+        "correct": 1,
+        "explanation": "Corretto B [Ref: Domande 7-8 banco domande]. L'effetto frontiera comporta uno spostamento verso l'alto nella curva dei costi del commercio."
+    },
+    {
+        "id": 3,
+        "question": "3. Nel corso dei secoli XVI-XVIII la leadership economica europea si spostò:",
+        "options": [
+            "A) Da Italia e Spagna a Paesi Bassi e Francia",
+            "B) Da Italia e Spagna a Paesi Bassi e Inghilterra",
+            "C) Da Inghilterra e Olanda all'area Mediterranea",
+            "D) Dalla Germania alla Russia imperiale"
+        ],
+        "correct": 1,
+        "explanation": "Corretto B [Ref: Domanda 18 banco domande / Appunti Cap 3]. La cosiddetta 'piccola divergenza' sposta il baricentro dal Mediterraneo al Mare del Nord."
+    },
+    {
+        "id": 4,
+        "question": "4. Nel corso dell'Ottocento, la principale caratteristica distintiva delle Banche Universali (miste) tedesche era:",
+        "options": [
+            "A) Operare esclusivamente sul credito a brevissimo termine",
+            "B) Concedere finanziamenti di lungo periodo ed essere presenti negli organi delle imprese",
+            "C) Evitare qualsiasi tipo di raccolta di depositi dal pubblico",
+            "D) Emettere direttamente moneta legale esente da riserva"
+        ],
+        "correct": 1,
+        "explanation": "Corretto B [Ref: Domanda 35, 44 banco domande / Appunti Cap 7]. La banca universale (es. Deutsche Bank) ha sostenuto l'industria capital-intensive tedesca."
+    },
+    {
+        "id": 5,
+        "question": "5. Secondo la teoria economica del vantaggio comparato di David Ricardo, il commercio tra nazioni dipende da:",
+        "options": [
+            "A) Differenze nella dotazione monetaria e riserve auree",
+            "B) Differenze nella produttività relativa del lavoro tra i paesi",
+            "C) Applicazione di dazi doganali protezionistici",
+            "D) Perfetta eguaglianza dei tassi di cambio"
+        ],
+        "correct": 1,
+        "explanation": "Corretto B [Ref: Domanda 26, 62, 84 banco domande / Appunti Cap 6-8]. Ricardo dimostra che il vantaggio comparato scaturisce dai divari di produttività del lavoro."
+    }
+]
+
+TEXT_DROPDOWN_QUESTIONS = [
+    {
+        "id": 1,
+        "title": "Testo 1: Omogeneità e Istituzioni Europee",
+        "template_parts": [
+            "La formazione dell'Europa è stata un lungo percorso storico. L'aspetto più sorprendente è dato dalla ",
+            " sul piano geo-economico. Il grande paradosso sta nel fatto che, nonostante le forze distruttive, il continente è rimasto omogeneo sul piano culturale e ",
+            " per via di potenti forze coesive. La più potente tra queste è l'interazione ",
+            "."
+        ],
+        "dropdowns": [
+            {"var_name": "t1_d1", "options": ["PERSISTENZA", "discontinuità", "frammentazione"], "correct": "PERSISTENZA"},
+            {"var_name": "t1_d2", "options": ["ISTITUZIONALE", "militare", "linguistico"], "correct": "ISTITUZIONALE"},
+            {"var_name": "t1_d3", "options": ["COMMERCIALE", "militare", "religiosa"], "correct": "COMMERCIALE"}
+        ],
+        "explanation": "Ref: Domanda 10 banco domande. L'Europa ha mantenuto omogeneità istituzionale e culturale grazie all'intensità degli scambi commerciali."
+    },
+    {
+        "id": 2,
+        "title": "Testo 2: Strumenti di Pagamento Storici",
+        "template_parts": [
+            "Prima della diffusione della moneta cartacea, gli scambi internazionali e interregionali si realizzavano soprattutto attraverso le ",
+            ". Il loro sviluppo fu avviato dai mercanti banchieri ",
+            " e costitutivo essenzialmente promesse del ",
+            " di corrispondere la somma dovuta al creditore in un determinato momento futuro."
+        ],
+        "dropdowns": [
+            {"var_name": "t2_d1", "options": ["LETTERE DI CAMBIO", "obbligazioni di stato", "monete fiat"], "correct": "LETTERE DI CAMBIO"},
+            {"var_name": "t2_d2", "options": ["ITALIANI", "inglesi", "fiamminghi"], "correct": "ITALIANI"},
+            {"var_name": "t2_d3", "options": ["DEBITORE", "sovrano", "banchiere centrale"], "correct": "DEBITORE"}
+        ],
+        "explanation": "Ref: Domanda 62 banco domande / Appunti Cap 7. Le lettere di cambio permisero di superare il rischio del trasporto di moneta metallica."
+    },
+    {
+        "id": 3,
+        "title": "Testo 3: Urbanizzazione e Consumi (Legge di Engel)",
+        "template_parts": [
+            "I residenti nei centri urbani sono attivi nella produzione non alimentare. Quando l'urbanizzazione cresce, aumenta la domanda di beni non di prima necessità perché l'elasticità al reddito della domanda di beni alimentari è ",
+            " rispetto a quella dei beni non alimentari. Questa regolarità empirica è nota come ",
+            " e dimostra che all'aumentare del reddito la quota destinata al cibo ",
+            "."
+        ],
+        "dropdowns": [
+            {"var_name": "t3_d1", "options": ["INFERIORE", "superiore", "pari"], "correct": "INFERIORE"},
+            {"var_name": "t3_d2", "options": ["LEGGE DI ENGEL", "trappola malthusiana", "legge di Gresham"], "correct": "LEGGE DI ENGEL"},
+            {"var_name": "t3_d3", "options": ["DIMINUISCE", "aumenta", "resta invariata"], "correct": "DIMINUISCE"}
+        ],
+        "explanation": "Ref: Domanda 76 banco domande / Appunti Cap 3. La legge di Engel stabilisce che la percentuale di reddito spesa in cibo cala al crescere della ricchezza."
+    }
+]
+
+GRAPH_QUESTIONS = [
+    {
+        "id": 1,
+        "title": "Grafico 1: Convergenza Beta in Europa (1950-1975)",
+        "graph_type": "beta_convergence",
+        "questions": [
+            {
+                "sub_id": "g1_q1",
+                "text": "1.1 Il grafico mostra una relazione negativa tra il livello di reddito iniziale (1950) e il tasso di crescita del PIL pro capite.",
+                "correct": "VERO",
+                "explanation": "VERO [Ref: Domanda 78 banco domande]. La pendenza negativa della retta indica che i paesi più poveri nel 1950 sono cresciuti più rapidamente."
+            },
+            {
+                "sub_id": "g1_q2",
+                "text": "1.2 Il grafico dimostra che il Regno Unito (GB) è cresciuto a tassi superiori rispetto ad economie inizialmente più povere come Grecia (GR) e Spagna (ES).",
+                "correct": "FALSO",
+                "explanation": "FALSO [Ref: Domanda 78 banco domande]. Il Regno Unito figura nella parte inferiore destra (bassa crescita, alto reddito iniziale)."
+            },
+            {
+                "sub_id": "g1_q3",
+                "text": "1.3 Il grafico conferma empiricamente il verificarsi della convergenza beta tra i paesi europei nel periodo 1950-1975.",
+                "correct": "VERO",
+                "explanation": "VERO [Ref: Domanda 78 banco domande / Appunti Cap 6]. La convergenza beta è la condizione necessaria per l'agganciamento (catch-up)."
+            }
+        ]
+    },
+    {
+        "id": 2,
+        "title": "Grafico 2: Il Trilemma delle Economie Aperte (Mundell-Fleming)",
+        "graph_type": "trilemma",
+        "questions": [
+            {
+                "sub_id": "g2_q1",
+                "text": "2.1 Il regime di Gold Standard (1870-1914) combinava tassi di cambio fissi e libera circolazione dei capitali, rinunciando all'autonomia monetaria.",
+                "correct": "VERO",
+                "explanation": "VERO [Ref: Domande 58, 95, 100 banco domande]. Nel Gold Standard le autorità non potevano condurre politiche monetarie autonome."
+            },
+            {
+                "sub_id": "g2_q2",
+                "text": "2.2 Il sistema di Bretton Woods (1945-1973) manteneva tassi di cambio fissi ed autonomia monetaria, richiedendo vincoli alla mobilità dei capitali.",
+                "correct": "VERO",
+                "explanation": "VERO [Ref: Domande 33, 34, 100 banco domande]. Il trilemma imponeva restrizioni sui capitali per preservare la parità col dollaro e l'autonomia."
+            },
+            {
+                "sub_id": "g2_q3",
+                "text": "2.3 Nel sistema monetario attuale (post-1973), i paesi mantengono tassi di cambio fissi con libera mobilità dei capitali ed autonomia monetaria simultanea.",
+                "correct": "FALSO",
+                "explanation": "FALSO [Ref: Domande 32, 96, 100 banco domande]. Impossibile per il trilemma: il sistema attuale adotta tassi FLESSIBILI per avere mobilità di capitali e autonomia."
+            }
+        ]
+    }
+]
 
 # ==========================================
-# INTERFACCIA STREAMLIT (Web-App iOS compatibile)
+# GENERATORE GRAFICI MATPLOTLIB
 # ==========================================
-st.set_page_config(page_title="Simulatore Matematica I", page_icon="🎓", layout="centered")
+def generate_matplotlib_figure(graph_type):
+    fig, ax = plt.subplots(figsize=(6.5, 3.2), dpi=100)
 
-# Inizializza le variabili di sessione per gestire i passaggi della web-app
+    if graph_type == "beta_convergence":
+        x = np.array([1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000])
+        y = np.array([5.2, 4.8, 4.5, 4.1, 3.8, 3.4, 3.1, 2.7, 2.5, 2.1])
+        countries = ['GR', 'ES', 'IT', 'AT', 'DE', 'FR', 'NO', 'BE', 'SE', 'GB']
+
+        ax.scatter(x, y, color='#1f4e78', s=45, zorder=3)
+        for i, txt in enumerate(countries):
+            ax.annotate(txt, (x[i] + 120, y[i] + 0.08), fontsize=8, fontweight='bold')
+
+        m, b = np.polyfit(x, y, 1)
+        ax.plot(x, m * x + b, color='#d9534f', linestyle='--', linewidth=2, label='Linea di Regressione (Beta-Convergenza)')
+
+        ax.set_title('Convergenza Beta: Tasso crescita PIL pro capite (1950-75) vs PIL 1950', fontsize=8, fontweight='bold')
+        ax.set_xlabel('PIL pro capite iniziale nel 1950 ($)', fontsize=8)
+        ax.set_ylabel('Crescita medio annua (%)', fontsize=8)
+        ax.grid(True, linestyle=':', alpha=0.5)
+        ax.legend(loc='upper right', fontsize=8)
+
+    elif graph_type == "trilemma":
+        ax.axis('off')
+        circle1 = patches.Circle((0.3, 0.55), 0.22, color='#3498db', alpha=0.4)
+        circle2 = patches.Circle((0.7, 0.55), 0.22, color='#e74c3c', alpha=0.4)
+        circle3 = patches.Circle((0.5, 0.25), 0.22, color='#2ecc71', alpha=0.4)
+
+        ax.add_patch(circle1)
+        ax.add_patch(circle2)
+        ax.add_patch(circle3)
+
+        ax.text(0.2, 0.65, 'Tassi di Cambio\nFissi', fontsize=8, fontweight='bold', ha='center')
+        ax.text(0.8, 0.65, 'Libera Mobilità\nCapitali', fontsize=8, fontweight='bold', ha='center')
+        ax.text(0.5, 0.12, 'Autonomia Monetaria', fontsize=8, fontweight='bold', ha='center')
+
+        ax.text(0.5, 0.66, 'Gold Standard\n(1870-1914)', fontsize=8, fontweight='bold', color='navy', ha='center')
+        ax.text(0.33, 0.35, 'Bretton Woods\n(1945-1973)', fontsize=8, fontweight='bold', color='darkred', ha='center')
+        ax.text(0.67, 0.35, 'Sistema Attuale\n(Post-1973)', fontsize=8, fontweight='bold', color='darkgreen', ha='center')
+
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 0.85)
+        ax.set_title('Il Trilemma delle Economie Aperte nei Regimi Monetari Storici', fontsize=8, fontweight='bold')
+
+    fig.tight_layout()
+    return fig
+
+
+# ==========================================
+# GESTIONE STATO DI SESSIONE
+# ==========================================
 if 'page' not in st.session_state:
     st.session_state.page = 'home'
-if 'quiz' not in st.session_state:
-    st.session_state.quiz = []
-if 'current_index' not in st.session_state:
-    st.session_state.current_index = 0
-if 'user_answers' not in st.session_state:
-    st.session_state.user_answers = {}
 if 'start_time' not in st.session_state:
     st.session_state.start_time = None
 
-def go_to_quiz():
-    st.session_state.quiz = genera_quiz_bilanciato()
-    st.session_state.current_index = 0
-    st.session_state.user_answers = {}
-    st.session_state.start_time = time.time()
-    st.session_state.page = 'quiz'
+if 'vf_answers' not in st.session_state:
+    st.session_state.vf_answers = {}
+if 'mc_answers' not in st.session_state:
+    st.session_state.mc_answers = {}
+if 'drop_answers' not in st.session_state:
+    st.session_state.drop_answers = {}
+if 'graph_answers' not in st.session_state:
+    st.session_state.graph_answers = {}
 
-def go_to_results():
+
+def start_exam():
+    st.session_state.page = 'exam'
+    st.session_state.start_time = time.time()
+    st.session_state.vf_answers = {}
+    st.session_state.mc_answers = {}
+    st.session_state.drop_answers = {}
+    st.session_state.graph_answers = {}
+
+
+def submit_exam():
     st.session_state.page = 'results'
 
 
+# ==========================================
+# INTERFACCIA STREAMLIT
+# ==========================================
+
 # --- SCHERMATA HOME ---
 if st.session_state.page == 'home':
-    st.title("🎓 Simulatore d'Esame")
-    st.subheader("Matematica I (ECO0100)")
-    
+    st.title("📜 Prova d'Esame: Storia Economica")
+    st.subheader("Simulatore Ufficiale Banco Domande & Appunti Lezione")
+
     st.markdown("""
-    **Regolamento della Prova:**
-    - **Durata:** 40 Minuti *(il timer si aggiorna ad ogni cambio di domanda)*
-    - **Quesiti:** 12 domande a scelta multipla, bilanciate per Modulo
-    - **Punteggio:** 1 punto a risposta, soglia minima **6/12**
-    - Sviluppata per funzionare interamente su Browser / iOS
+    **Struttura della Prova:**
+    - **Durata:** 30 Minuti *(timer integrato)*
+    - **Sezione 1:** 10 Domande Vero / Falso *(1 punto ciascuna)*
+    - **Sezione 2:** 5 Domande a Risposta Multipla *(2 punti ciascuna)*
+    - **Sezione 3:** 3 Testi da completare con menu a tendina *(1 punto a spazio - 9 punti tot)*
+    - **Sezione 4:** 2 Grafici con 3 quesiti V/F ciascuno *(1 punto a risposta - 6 punti tot)*
+    
+    **Punteggio Massimo:** 35 Punti
     """)
-    
-    st.info(f"📚 La banca dati attualmente caricata contiene **57 quesiti ufficiali** (Simulazioni 2021-2023).")
-    
-    if st.button("▶ AVVIA SIMULAZIONE (40 MINUTI)", type="primary"):
-        go_to_quiz()
+
+    if st.button("▶ AVVIA SIMULAZIONE ESAME (30 MINUTI)", type="primary"):
+        start_exam()
         st.rerun()
 
-# --- SCHERMATA QUIZ ---
-elif st.session_state.page == 'quiz':
-    # Gestione Timer
+
+# --- SCHERMATA ESAME ---
+elif st.session_state.page == 'exam':
+
+    # Timer display
     elapsed = time.time() - st.session_state.start_time
-    remaining = max(0, 40 * 60 - elapsed)
-    
+    remaining = max(0, 30 * 60 - elapsed)
+
     if remaining == 0:
-        st.error("⏱ Tempo scaduto! La prova verrà consegnata automaticamente.")
+        st.error("⏱ Tempo scaduto! La prova verrà inviata automaticamente per il calcolo del punteggio.")
         time.sleep(2)
-        go_to_results()
+        submit_exam()
         st.rerun()
-        
+
     m, s = divmod(int(remaining), 60)
     st.info(f"⏱ **Tempo Rimanente:** {m:02d}:{s:02d}")
 
-    # Domanda Corrente
-    q = st.session_state.quiz[st.session_state.current_index]
-    
-    st.caption(f"📍 **Domanda {st.session_state.current_index + 1} di {len(st.session_state.quiz)}** | {q['modulo']}")
-    st.markdown(f"#### {q['testo']}")
-    
-    # Formatta opzioni
-    lettere_possibili = ['a', 'b', 'c', 'd']
-    opzioni_testo = []
-    mappa_scelte = {}
-    
-    for l in lettere_possibili:
-        if l in q['opzioni']:
-            testo_opzione = f"{l}) {q['opzioni'][l]}"
-            opzioni_testo.append(testo_opzione)
-            mappa_scelte[testo_opzione] = l
-            
-    # Recupera l'indice della risposta salvata (se l'utente torna indietro)
-    risposta_salvata = st.session_state.user_answers.get(q['id'])
-    idx_risposta = None
-    if risposta_salvata:
-        for i, testo_opt in enumerate(opzioni_testo):
-            if mappa_scelte[testo_opt] == risposta_salvata:
-                idx_risposta = i
-                break
-    
-    # Radio Buttons Streamlit
-    scelta = st.radio("Seleziona un'opzione:", opzioni_testo, index=idx_risposta, key=q['id'])
-    
-    if scelta:
-        # Salva la lettera scelta dall'utente (estrapolandola tramite il mapping)
-        st.session_state.user_answers[q['id']] = mappa_scelte[scelta]
-        
-    st.divider()
-    
-    # Bottoni di navigazione in colonne
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        if st.session_state.current_index > 0:
-            if st.button("◄ Precedente"):
-                st.session_state.current_index -= 1
-                st.rerun()
-                
-    with col2:
-        if st.session_state.current_index < len(st.session_state.quiz) - 1:
-            if st.button("Successiva ►"):
-                st.session_state.current_index += 1
-                st.rerun()
-                
-    with col3:
-        if st.button("✓ CONCLUDI E INVIA", type="primary"):
-            go_to_results()
-            st.rerun()
+    # TAB DELLE SEZIONI
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "1. Vero / Falso (10)",
+        "2. Risposta Multipla (5)",
+        "3. Testi a Tendina (3)",
+        "4. Analisi Grafici (2)"
+    ])
+
+    # SEZIONE 1: VERO / FALSO
+    with tab1:
+        st.markdown("### Sezione 1: Vero / Falso")
+        st.caption("Rispondi VERO o FALSO a ciascuna delle 10 domande.")
+
+        for q in VF_QUESTIONS:
+            st.markdown(f"**{q['text']}**")
+            current_ans = st.session_state.vf_answers.get(q['id'])
+            idx = ["VERO", "FALSO"].index(current_ans) if current_ans in ["VERO", "FALSO"] else None
+
+            ans = st.radio(
+                "La tua risposta:",
+                ["VERO", "FALSO"],
+                index=idx,
+                key=f"vf_{q['id']}"
+            )
+            st.session_state.vf_answers[q['id']] = ans
+            st.divider()
+
+    # SEZIONE 2: RISPOSTA MULTIPLA
+    with tab2:
+        st.markdown("### Sezione 2: Risposta Multipla")
+        st.caption("Seleziona l'unica opzione corretta per ciascuno dei 5 quesiti.")
+
+        for q in MC_QUESTIONS:
+            st.markdown(f"**{q['question']}**")
+            current_ans = st.session_state.mc_answers.get(q['id'])
+
+            ans = st.radio(
+                "Seleziona un'opzione:",
+                q['options'],
+                index=current_ans if current_ans is not None else None,
+                key=f"mc_{q['id']}"
+            )
+            if ans:
+                st.session_state.mc_answers[q['id']] = q['options'].index(ans)
+            st.divider()
+
+    # SEZIONE 3: TESTI A TENDINA
+    with tab3:
+        st.markdown("### Sezione 3: Testi da Completare")
+        st.caption("Seleziona il termine corretto dai menu a tendina per completare i 3 brani.")
+
+        for t_item in TEXT_DROPDOWN_QUESTIONS:
+            st.markdown(f"#### {t_item['title']}")
+            parts = t_item['template_parts']
+            dropdowns = t_item['dropdowns']
+
+            # Costruzione dinamica testo + tendine
+            for i in range(len(parts)):
+                st.write(parts[i])
+                if i < len(dropdowns):
+                    d_info = dropdowns[i]
+                    var_name = d_info['var_name']
+                    curr_val = st.session_state.drop_answers.get(var_name, "-- Scegli --")
+
+                    opts = ["-- Scegli --"] + d_info['options']
+                    idx = opts.index(curr_val) if curr_val in opts else 0
+
+                    sel = st.selectbox(
+                        f"Spazio vuoto [{i+1}]:",
+                        opts,
+                        index=idx,
+                        key=f"drop_{var_name}"
+                    )
+                    st.session_state.drop_answers[var_name] = sel
+
+            st.divider()
+
+    # SEZIONE 4: GRAFICI
+    with tab4:
+        st.markdown("### Sezione 4: Analisi dei Grafici")
+        st.caption("Osserva i grafici e rispondi VERO o FALSO ai 3 quesiti associati ciascuno.")
+
+        for g_item in GRAPH_QUESTIONS:
+            st.markdown(f"#### {g_item['title']}")
+
+            # Render figura Matplotlib
+            fig = generate_matplotlib_figure(g_item['graph_type'])
+            st.pyplot(fig)
+            plt.close(fig)
+
+            for sub_q in g_item['questions']:
+                st.markdown(f"**{sub_q['text']}**")
+                current_ans = st.session_state.graph_answers.get(sub_q['sub_id'])
+                idx = ["VERO", "FALSO"].index(current_ans) if current_ans in ["VERO", "FALSO"] else None
+
+                ans = st.radio(
+                    "Risposta:",
+                    ["VERO", "FALSO"],
+                    index=idx,
+                    key=f"g_{sub_q['sub_id']}"
+                )
+                st.session_state.graph_answers[sub_q['sub_id']] = ans
+
+            st.divider()
+
+    # BOTTONE CONSEGNA
+    if st.button("✓ INVIA ESAME E CALCOLA PUNTEGGIO", type="primary"):
+        submit_exam()
+        st.rerun()
+
 
 # --- SCHERMATA RISULTATI ---
 elif st.session_state.page == 'results':
-    st.title("Esito della Simulazione")
-    
-    # Calcolo punteggio
-    punteggio = sum(
-        1 for q in st.session_state.quiz 
-        if st.session_state.user_answers.get(q['id']) == q['corretta']
-    )
-            
-    if punteggio >= 6:
-        st.success(f"🎉 **PROVA SUPERATA!** Hai totalizzato {punteggio} / 12 punti.")
+    st.title("🏆 Esito Finale e Report Esame")
+
+    # Calcolo punteggi
+    score_vf = 0
+    score_mc = 0
+    score_drop = 0
+    score_graph = 0
+
+    # 1. Check V/F
+    for q in VF_QUESTIONS:
+        if st.session_state.vf_answers.get(q['id']) == q['correct']:
+            score_vf += 1
+
+    # 2. Check MC
+    for q in MC_QUESTIONS:
+        if st.session_state.mc_answers.get(q['id']) == q['correct']:
+            score_mc += 2
+
+    # 3. Check Dropdowns
+    for t_item in TEXT_DROPDOWN_QUESTIONS:
+        for d in t_item['dropdowns']:
+            if st.session_state.drop_answers.get(d['var_name']) == d['correct']:
+                score_drop += 1
+
+    # 4. Check Graphs
+    for g_item in GRAPH_QUESTIONS:
+        for sub_q in g_item['questions']:
+            if st.session_state.graph_answers.get(sub_q['sub_id']) == sub_q['correct']:
+                score_graph += 1
+
+    total_score = score_vf + score_mc + score_drop + score_graph
+    max_score = 35
+
+    if total_score >= 21:
+        st.success(f"🎉 **ESAME SUPERATO!** Punteggio Totale: **{total_score} / {max_score}**")
     else:
-        st.error(f"❌ **PROVA NON SUPERATA.** Hai totalizzato {punteggio} / 12 punti. (Soglia minima: 6/12)")
-        
-    st.subheader("Revisione Dettagliata Quesiti")
-    
-    for i, q in enumerate(st.session_state.quiz):
-        risposta_data = st.session_state.user_answers.get(q['id'], 'nessuna')
-        esatta = (risposta_data == q['corretta'])
-        
-        icon = "✅" if esatta else "❌"
-        with st.expander(f"{icon} Quesito {i+1} - {q['modulo']}"):
-            st.markdown(f"**{q['testo']}**")
-            st.write(f"La tua risposta: **[{risposta_data.upper()}]**")
-            st.write(f"Risposta corretta: **[{q['corretta'].upper()}]**")
-            
-            if not esatta:
-                st.warning("Hai commesso un errore o saltato il quesito in questa domanda.")
-                
-            st.info(f"💡 **Svolgimento:** {q['spiegazione']}")
-            st.caption(f"Fonte originaria: {q['fonte']}")
-            
+        st.error(f"❌ **ESAME NON SUPERATO.** Punteggio Totale: **{total_score} / {max_score}** (Soglia minima: 21/35)")
+
+    st.markdown(f"""
+    **Dettaglio Punteggi:**
+    - Vero / Falso: **{score_vf} / 10**
+    - Risposta Multipla: **{score_mc} / 10**
+    - Testi a Tendina: **{score_drop} / 9**
+    - Analisi Grafici: **{score_graph} / 6**
+    """)
+
     st.divider()
-    if st.button("🔄 RITORNA ALLA HOME E RIPROVA"):
+    st.subheader("📋 Correzione Dettagliata per Sezione")
+
+    # REPORT V/F
+    with st.expander("Sezione 1: Vero / Falso"):
+        for q in VF_QUESTIONS:
+            ans = st.session_state.vf_answers.get(q['id'], 'Non data')
+            icon = "✅" if ans == q['correct'] else "❌"
+            st.markdown(f"{icon} **Q{q['id']}:** {q['text']}")
+            st.write(f"- Tua risposta: **{ans}** | Risposta corretta: **{q['correct']}**")
+            st.info(f"💡 Spiegazione: {q['explanation']}")
+            st.divider()
+
+    # REPORT MC
+    with st.expander("Sezione 2: Risposta Multipla"):
+        for q in MC_QUESTIONS:
+            ans_idx = st.session_state.mc_answers.get(q['id'])
+            ans_str = q['options'][ans_idx] if ans_idx is not None else "Non data"
+            corr_str = q['options'][q['correct']]
+            icon = "✅" if ans_idx == q['correct'] else "❌"
+
+            st.markdown(f"{icon} **Q{q['id']}:** {q['question']}")
+            st.write(f"- Tua risposta: **{ans_str}**")
+            st.write(f"- Risposta corretta: **{corr_str}**")
+            st.info(f"💡 Spiegazione: {q['explanation']}")
+            st.divider()
+
+    # REPORT TENDINE
+    with st.expander("Sezione 3: Testi a Tendina"):
+        for t_item in TEXT_DROPDOWN_QUESTIONS:
+            st.markdown(f"#### {t_item['title']}")
+            for d in t_item['dropdowns']:
+                ans = st.session_state.drop_answers.get(d['var_name'], 'Non data')
+                icon = "✅" if ans == d['correct'] else "❌"
+                st.write(f"{icon} Spazio `[{d['var_name']}]` -> Tua risposta: **{ans}** | Corretta: **{d['correct']}**")
+            st.info(f"💡 Spiegazione: {t_item['explanation']}")
+            st.divider()
+
+    # REPORT GRAFICI
+    with st.expander("Sezione 4: Analisi Grafici"):
+        for g_item in GRAPH_QUESTIONS:
+            st.markdown(f"#### {g_item['title']}")
+            for sub_q in g_item['questions']:
+                ans = st.session_state.graph_answers.get(sub_q['sub_id'], 'Non data')
+                icon = "✅" if ans == sub_q['correct'] else "❌"
+                st.markdown(f"{icon} **Q{sub_q['sub_id']}:** {sub_q['text']}")
+                st.write(f"- Tua risposta: **{ans}** | Corretta: **{sub_q['correct']}**")
+                st.info(f"💡 Spiegazione: {sub_q['explanation']}")
+            st.divider()
+
+    if st.button("🔄 TORNA ALLA HOME E RIPROVA"):
         st.session_state.page = 'home'
         st.rerun()
